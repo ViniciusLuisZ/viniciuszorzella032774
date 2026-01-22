@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("api/v1/auth")
 public class AuthController {
 
     private final JwtService jwtService;
@@ -15,13 +15,13 @@ public class AuthController {
         this.jwtService = jwtService;
     }
 
-    @PostMapping("api/v1/login")
+    @PostMapping("login")
     public Map<String, String> login(@RequestParam String nome, @RequestParam String senha) {
         String token = jwtService.generateToken(nome);
         return Map.of("token", token);
     }
 
-    @PostMapping("api/v1/refresh")
+    @PostMapping("refresh")
     public Map<String, String> refresh(@RequestHeader("Authorization") String authHeader) {
         String token = authHeader.substring(7);
         String username = jwtService.getUsername(token);
