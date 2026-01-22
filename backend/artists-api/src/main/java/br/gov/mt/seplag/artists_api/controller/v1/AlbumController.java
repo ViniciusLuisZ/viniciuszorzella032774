@@ -3,7 +3,6 @@ package br.gov.mt.seplag.artists_api.controller.v1;
 
 import br.gov.mt.seplag.artists_api.domain.entity.Album;
 import br.gov.mt.seplag.artists_api.service.AlbumService;
-import br.gov.mt.seplag.artists_api.service.ArtistaService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -27,11 +26,9 @@ public class AlbumController {
         return albumService.getAlbunsByArtista(artistaId, pageable);
     }
 
-
     @DeleteMapping("/{id}")
     public void deletar(@PathVariable Integer id) {
         albumService.deletarAlbum(id);
     }
-
 
 }
