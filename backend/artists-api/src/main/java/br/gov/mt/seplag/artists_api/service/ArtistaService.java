@@ -4,6 +4,7 @@ import br.gov.mt.seplag.artists_api.domain.entity.Artista;
 import br.gov.mt.seplag.artists_api.domain.entity.Album;
 import br.gov.mt.seplag.artists_api.domain.repository.ArtistaRepository;
 import br.gov.mt.seplag.artists_api.domain.repository.AlbumRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,8 +26,14 @@ public class ArtistaService {
         return artistaRepository.findAll(pageable);
     }
 
-    public Page<Album> getAlbunsByArtista(Integer artistaId, Pageable pageable) {
-        return albumRepository.findByArtistaId(artistaId, pageable);
+    public void deletarArtista(Integer artistaId) {
+
+        if (!artistaRepository.existsById(artistaId)) {
+            throw new EntityNotFoundException("Artista não encontrado");
+        }
+
+        artistaRepository.deleteById(artistaId);
     }
+
 
 }

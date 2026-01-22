@@ -1,4 +1,4 @@
-package br.gov.mt.seplag.artists_api.controller;
+package br.gov.mt.seplag.artists_api.controller.v1;
 
 import br.gov.mt.seplag.artists_api.domain.entity.Artista;
 import br.gov.mt.seplag.artists_api.domain.entity.Album;
@@ -25,11 +25,9 @@ public class ArtistaController {
         return artistaService.getAllArtistas(pageable);
     }
 
-    @GetMapping("/{artistaId}/albuns")
-    public Page<Album> getAlbunsByArtista(
-            @PathVariable Integer artistaId,
-            @PageableDefault(size = 10, sort = "titulo") Pageable pageable
-    ) {
-        return artistaService.getAlbunsByArtista(artistaId, pageable);
+    @DeleteMapping("/{id}")
+    public void deletar(@PathVariable Integer id) {
+        artistaService.deletarArtista(id);
     }
+
 }

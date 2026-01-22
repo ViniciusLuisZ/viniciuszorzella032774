@@ -11,5 +11,5 @@ CREATE TABLE albuns (
                        capa_url VARCHAR(255),
                        artista_id INTEGER NOT NULL,
                        criado_em TIMESTAMP NOT NULL DEFAULT now(),
-                       CONSTRAINT fk_album_artista FOREIGN KEY (artista_id) REFERENCES artistas(id)
+                       CONSTRAINT fk_album_artista FOREIGN KEY (artista_id) REFERENCES artistas(id) ON DELETE CASCADE
 );
