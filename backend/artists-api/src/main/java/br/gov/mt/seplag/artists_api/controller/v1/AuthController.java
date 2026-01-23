@@ -1,5 +1,6 @@
 package br.gov.mt.seplag.artists_api.controller.v1;
 
+import br.gov.mt.seplag.artists_api.domain.dto.LoginRequest;
 import br.gov.mt.seplag.artists_api.security.JwtService;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,8 +17,8 @@ public class AuthController {
     }
 
     @PostMapping("login")
-    public Map<String, String> login(@RequestParam String nome, @RequestParam String senha) {
-        String token = jwtService.generateToken(nome);
+    public Map<String, String> login(@RequestBody LoginRequest request) {
+        String token = jwtService.generateToken(request.nome());
         return Map.of("token", token);
     }
 

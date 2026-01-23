@@ -2,6 +2,8 @@ package br.gov.mt.seplag.artists_api.config;
 
 import br.gov.mt.seplag.artists_api.security.JwtAuthenticationFilter;
 import br.gov.mt.seplag.artists_api.security.JwtService;
+import br.gov.mt.seplag.artists_api.security.RateLimitFilter;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -14,7 +16,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, JwtService jwtService) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, JwtService jwtService, RateLimitFilter rateLimitFilter) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
@@ -29,8 +31,12 @@ public class SecurityConfig {
                 ).addFilterBefore(
                         new JwtAuthenticationFilter(jwtService),
                         UsernamePasswordAuthenticationFilter.class
+                ).addFilterAfter(
+                        rateLimitFilter,
+                        JwtAuthenticationFilter.class
                 );
 
         return http.build();
     }
+
 }
