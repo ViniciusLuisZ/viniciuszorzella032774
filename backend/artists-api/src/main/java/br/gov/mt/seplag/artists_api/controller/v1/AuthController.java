@@ -10,6 +10,8 @@ import java.util.Map;
 @RequestMapping("api/v1/auth")
 public class AuthController {
 
+
+
     private final JwtService jwtService;
 
     public AuthController(JwtService jwtService) {
@@ -18,14 +20,43 @@ public class AuthController {
 
     @PostMapping("login")
     public Map<String, String> login(@RequestBody LoginRequest request) {
-        String token = jwtService.generateToken(request.nome());
-        return Map.of("token", token);
+        String accessToken = jwtService.generateToken(
+                request.nome(),
+                "ACCESS",
+                300_000 // 5 min
+        );
+
+        String refreshToken = jwtService.generateToken(
+                request.nome(),
+                "REFRESH",
+                1_800_000 // 30 min
+        );
+
+        return Map.of(
+                "accessToken", accessToken,
+                "refreshToken", refreshToken
+        );
     }
 
     @PostMapping("refresh")
     public Map<String, String> refresh(@RequestHeader("Authorization") String authHeader) {
         String token = authHeader.substring(7);
+
+        if (!jwtService.isRefreshToken(token)) {
+            throw new RuntimeException("Token inválido para refresh");
+        }
+
         String username = jwtService.getUsername(token);
-        return Map.of("token", jwtService.generateToken(username));
+
+        String newAccessToken = jwtService.generateToken(
+                username,
+                "ACCESS",
+                300_000
+        );
+
+        return Map.of("accessToken", newAccessToken);
     }
+
+
+
 }

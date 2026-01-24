@@ -12,17 +12,17 @@ import java.util.Date;
 public class JwtService {
 
     private static final String secret = "minha-chave-super-secreta-min-32-chars";
-    private static final long expiration = 300000; // 5 minutos em ms
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(String username) {
+    public String generateToken(String username, String type, long expirationMs) {
         return Jwts.builder()
                 .setSubject(username)
+                .claim("type", type)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + expiration))
+                .setExpiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(getSigningKey())
                 .compact();
     }
@@ -43,4 +43,23 @@ public class JwtService {
             return false;
         }
     }
+
+    public boolean isRefreshToken(String token) {
+        Claims claims = Jwts.parser()
+                .setSigningKey(getSigningKey())
+                .parseClaimsJws(token)
+                .getBody();
+
+        return "REFRESH".equals(claims.get("type"));
+    }
+
+    public boolean isAccessToken(String token) {
+        Claims claims = Jwts.parser()
+                .setSigningKey(getSigningKey())
+                .parseClaimsJws(token)
+                .getBody();
+
+        return "ACCESS".equals(claims.get("type"));
+    }
+
 }
