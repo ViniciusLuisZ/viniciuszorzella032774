@@ -35,16 +35,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String ip = request.getRemoteAddr();
 
-        if (authentication == null || !authentication.isAuthenticated()) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        String username = authentication.getName();
-
-        Bucket bucket = buckets.computeIfAbsent(username, key -> createNewBucket());
+        Bucket bucket = buckets.computeIfAbsent(ip, key -> createNewBucket());
 
         if (bucket.tryConsume(1)) {
             filterChain.doFilter(request, response);
