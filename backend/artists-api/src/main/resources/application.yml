@@ -1,6 +1,12 @@
 server:
   port: 8080
 
+minio:
+  url: http://localhost:9000
+  access-key: minioadmin
+  secret-key: minioadmin
+  bucket: imagens
+
 
 management:
   endpoints:

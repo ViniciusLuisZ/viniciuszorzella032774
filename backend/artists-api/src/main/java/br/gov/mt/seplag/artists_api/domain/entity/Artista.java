@@ -16,8 +16,8 @@ public class Artista {
     @Column(nullable = false, length = 200)
     private String nome;
 
-    @Column(name = "foto_url", length = 255)
-    private String fotoUrl;
+    @Column(name = "foto_endereco", length = 255)
+    private String fotoEndereco;
 
     @Column(name = "criado_em", nullable = false, updatable = false)
     private LocalDateTime criadoEm;

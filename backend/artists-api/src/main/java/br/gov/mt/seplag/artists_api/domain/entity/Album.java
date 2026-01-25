@@ -14,8 +14,8 @@ public class Album {
     @Column(nullable = false, length = 200)
     private String titulo;
 
-    @Column(name = "capa_url", length = 255)
-    private String capaUrl;
+    @Column(name = "capa_endereco", length = 255)
+    private String capaEndereco;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "artista_id", nullable = false)
