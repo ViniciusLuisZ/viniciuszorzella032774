@@ -31,4 +31,39 @@ public class Artista {
 
     protected Artista() {}
 
+    public Artista(String nome, String fotoEndereco) {
+        this.nome = nome;
+        this.fotoEndereco = fotoEndereco;
+        this.criadoEm = LocalDateTime.now();
+    }
+
+    // getters
+    public Integer getId() {
+        return id;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public String getFotoEndereco() {
+        return fotoEndereco;
+    }
+
+    public LocalDateTime getCriadoEm() {
+        return criadoEm;
+    }
+
+    public List<Album> getAlbuns() {
+        return albuns;
+    }
+
+    public void atualizarNome(String nome) {
+        this.nome = nome;
+    }
+
+    public void atualizarFoto(String fotoEndereco) {
+        this.fotoEndereco = fotoEndereco;
+    }
+
 }

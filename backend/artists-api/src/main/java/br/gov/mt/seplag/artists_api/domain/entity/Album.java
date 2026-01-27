@@ -26,4 +26,32 @@ public class Album {
 
     protected Album() {}
 
+
+    public Album(String titulo, String capaEndereco, Artista artista) {
+        this.titulo = titulo;
+        this.capaEndereco = capaEndereco;
+        this.artista = artista;
+        this.criadoEm = LocalDateTime.now();
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public String getTitulo() {
+        return titulo;
+    }
+
+    public String getCapaEndereco() {
+        return capaEndereco;
+    }
+
+    public Artista getArtista() {
+        return artista;
+    }
+
+    public LocalDateTime getCriadoEm() {
+        return criadoEm;
+    }
+
 }

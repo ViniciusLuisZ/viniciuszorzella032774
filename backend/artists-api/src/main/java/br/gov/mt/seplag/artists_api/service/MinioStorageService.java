@@ -34,7 +34,11 @@ public class MinioStorageService {
         }
     }
 
-    public String upload(MultipartFile file, String objectName) throws Exception {
+    public String upload(MultipartFile file, String folder) throws Exception {
+
+        String extension = getExtension(file.getOriginalFilename());
+        String objectName = folder + "/" + java.util.UUID.randomUUID() + extension;
+
         minioClient.putObject(
                 PutObjectArgs.builder()
                         .bucket(bucket)
@@ -43,7 +47,15 @@ public class MinioStorageService {
                         .contentType(file.getContentType())
                         .build()
         );
+
         return objectName;
+    }
+
+    private String getExtension(String filename) {
+        if (filename == null || !filename.contains(".")) {
+            return "";
+        }
+        return filename.substring(filename.lastIndexOf("."));
     }
 
     public String generatePresignedUrl(String objectName) throws Exception {
@@ -56,5 +68,19 @@ public class MinioStorageService {
                         .build()
         );
     }
+
+    public void delete(String objectPath) {
+        try {
+            minioClient.removeObject(
+                    RemoveObjectArgs.builder()
+                            .bucket(bucket)
+                            .object(objectPath)
+                            .build()
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao remover arquivo do MinIO", e);
+        }
+    }
+
 
 }
