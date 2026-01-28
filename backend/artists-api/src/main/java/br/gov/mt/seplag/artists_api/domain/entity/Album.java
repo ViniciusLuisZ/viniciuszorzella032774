@@ -54,4 +54,13 @@ public class Album {
         return criadoEm;
     }
 
+    public void atualizarTitulo(String titulo) {
+        this.titulo = titulo;
+    }
+
+    public void atualizarCapa(String capaEndereco) {
+        this.capaEndereco = capaEndereco;
+    }
+
+
 }

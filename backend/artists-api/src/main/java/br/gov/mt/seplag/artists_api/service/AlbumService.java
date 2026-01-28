@@ -6,6 +6,8 @@ import br.gov.mt.seplag.artists_api.domain.entity.Artista;
 import br.gov.mt.seplag.artists_api.domain.repository.AlbumRepository;
 import br.gov.mt.seplag.artists_api.domain.repository.ArtistaRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +22,8 @@ public class AlbumService {
     private final ArtistaRepository artistaRepository;
     private final MinioStorageService minioStorageService;
 
+    private static final Logger log = LoggerFactory.getLogger(AlbumService.class);
+
     @Autowired
     public AlbumService(AlbumRepository albumRepository, ArtistaRepository artistaRepository, MinioStorageService minioStorageService) {
         this.albumRepository = albumRepository;
@@ -27,17 +31,59 @@ public class AlbumService {
         this.minioStorageService = minioStorageService;
     }
 
+
+    @Transactional
     public void deletarAlbum(Integer albumId) {
 
-        if (!albumRepository.existsById(albumId)) {
-            throw new EntityNotFoundException("Álbum não encontrado");
-        }
+        Album album = albumRepository.findById(albumId)
+                .orElseThrow(() -> new EntityNotFoundException("Álbum não encontrado"));
 
-        albumRepository.deleteById(albumId);
+        String capaEndereco = album.getCapaEndereco();
+
+        albumRepository.delete(album);
+
+        if (capaEndereco != null && !capaEndereco.isBlank()) {
+            try {
+                minioStorageService.delete(capaEndereco);
+            } catch (Exception e) {
+                log.warn(
+                        "Falha ao remover capa do álbum {} no MinIO",
+                        albumId,
+                        e
+                );
+            }
+        }
     }
 
-    public Page<Album> getAlbunsByArtista(Integer artistaId, Pageable pageable) {
-        return albumRepository.findByArtistaId(artistaId, pageable);
+
+
+    public Page<AlbumResponse> buscarAlbunsPorArtista(
+            Integer artistaId,
+            Pageable pageable
+    ) {
+
+        return albumRepository.findByArtistaId(artistaId, pageable)
+                .map(album -> {
+
+                    String capaUrl = null;
+
+                    if (album.getCapaEndereco() != null) {
+                        try {
+                            capaUrl = minioStorageService.generatePresignedUrl(
+                                    album.getCapaEndereco()
+                            );
+                        } catch (Exception e) {
+                            capaUrl = null;
+                        }
+                    }
+
+                    return new AlbumResponse(
+                            album.getId(),
+                            album.getTitulo(),
+                            capaUrl,
+                            album.getCriadoEm()
+                    );
+                });
     }
 
 
@@ -63,6 +109,64 @@ public class AlbumService {
             capaUrl = minioStorageService.generatePresignedUrl(salvo.getCapaEndereco());
         } catch (Exception e) {
             throw new RuntimeException("Erro ao gerar URL da capa", e);
+        }
+
+        return new AlbumResponse(
+                salvo.getId(),
+                salvo.getTitulo(),
+                capaUrl,
+                salvo.getCriadoEm()
+        );
+    }
+
+
+    @Transactional
+    public AlbumResponse atualizarAlbum(
+            Integer albumId,
+            String titulo,
+            MultipartFile capa
+    ) {
+
+        Album album = albumRepository.findById(albumId)
+                .orElseThrow(() -> new EntityNotFoundException("Álbum não encontrado"));
+
+        album.atualizarTitulo(titulo);
+
+        String capaAntiga = album.getCapaEndereco();
+
+        if (capa != null && !capa.isEmpty()) {
+            try {
+                String novoEndereco = minioStorageService.upload(
+                        capa,
+                        "albuns/" + album.getArtista().getId()
+                );
+
+                album.atualizarCapa(novoEndereco);
+
+                if (capaAntiga != null && !capaAntiga.isBlank()) {
+                    try {
+                        minioStorageService.delete(capaAntiga);
+                    } catch (Exception e) {
+                        log.warn("Falha ao remover capa antiga do álbum {}", albumId, e);
+                    }
+                }
+
+            } catch (Exception e) {
+                throw new RuntimeException("Erro ao atualizar capa do álbum", e);
+            }
+        }
+
+        Album salvo = albumRepository.save(album);
+
+        String capaUrl = null;
+        if (salvo.getCapaEndereco() != null) {
+            try {
+                capaUrl = minioStorageService.generatePresignedUrl(
+                        salvo.getCapaEndereco()
+                );
+            } catch (Exception e) {
+                log.warn("Falha ao gerar URL da capa do álbum {}", albumId, e);
+            }
         }
 
         return new AlbumResponse(
