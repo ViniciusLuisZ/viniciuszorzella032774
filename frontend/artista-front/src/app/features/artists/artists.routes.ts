@@ -6,4 +6,9 @@ export const ARTISTS_ROUTES: Routes = [
     loadComponent: () =>
       import('./artists-list').then(m => m.ArtistsList),
   },
+  {
+    path: 'new',
+    loadComponent: () =>
+      import('./artist-create.component').then(m => m.ArtistCreateComponent),
+  },
 ];

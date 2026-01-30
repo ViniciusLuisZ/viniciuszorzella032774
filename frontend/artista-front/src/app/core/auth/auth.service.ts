@@ -1,36 +1,62 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable, tap, map } from 'rxjs';
+import { AuthApi } from './auth.api';
 
 type AuthState = {
-  token: string | null;
+  accessToken: string | null;
+  refreshToken: string | null;
 };
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly KEY = 'auth_token';
+  private readonly ACCESS = 'access_token';
+  private readonly REFRESH = 'refresh_token';
 
   private readonly state$ = new BehaviorSubject<AuthState>({
-    token: localStorage.getItem(this.KEY),
+    accessToken: localStorage.getItem(this.ACCESS),
+    refreshToken: localStorage.getItem(this.REFRESH),
   });
 
-  token$ = this.state$.asObservable();
+  constructor(private api: AuthApi) {}
 
-  get token(): string | null {
-    return this.state$.value.token;
+  get accessToken(): string | null {
+    return this.state$.value.accessToken;
   }
 
-  setToken(token: string | null) {
-    if (token) localStorage.setItem(this.KEY, token);
-    else localStorage.removeItem(this.KEY);
-
-    this.state$.next({ token });
-  }
-
-  logout() {
-    this.setToken(null);
+  get refreshToken(): string | null {
+    return this.state$.value.refreshToken;
   }
 
   isAuthenticated(): boolean {
-    return !!this.token;
+    return !!this.accessToken;
+  }
+
+  private setTokens(accessToken: string, refreshToken: string) {
+    localStorage.setItem(this.ACCESS, accessToken);
+    localStorage.setItem(this.REFRESH, refreshToken);
+    this.state$.next({ accessToken, refreshToken });
+  }
+
+  logout() {
+    localStorage.removeItem(this.ACCESS);
+    localStorage.removeItem(this.REFRESH);
+    this.state$.next({ accessToken: null, refreshToken: null });
+  }
+
+  login(nome: string, senha: string): Observable<void> {
+    return this.api.login(nome, senha).pipe(
+      tap(res => this.setTokens(res.accessToken, res.refreshToken)),
+      map(() => void 0),
+    );
+  }
+
+  refresh(): Observable<void> {
+    const refreshToken = this.refreshToken;
+    if (!refreshToken) throw new Error('Sem refresh token');
+
+    return this.api.refresh(refreshToken).pipe(
+      tap(res => this.setTokens(res.accessToken, res.refreshToken)),
+      map(() => void 0),
+    );
   }
 }
