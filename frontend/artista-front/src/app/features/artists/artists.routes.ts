@@ -11,4 +11,17 @@ export const ARTISTS_ROUTES: Routes = [
     loadComponent: () =>
       import('./artist-create.component').then(m => m.ArtistCreateComponent),
   },
+  {
+    path: ':id/edit',
+    loadComponent: () => import('./artist-edit').then(m => m.ArtistEdit),
+  },
+  {
+    path: ':id',
+    loadComponent: () => import('../album/albuns-list').then(m => m.AlbunsList),
+  },
+  {
+    path: ':id/album/new',
+    loadComponent: () => import('../album/album-create').then(m => m.AlbumCreate),
+  },
+
 ];

@@ -86,6 +86,31 @@ export class ArtistsFacade {
     );
   }
 
+  deleteArtist(id: number) {
+    this.patch({ loading: true, error: null });
+
+    return this.api.deleteArtist(id).pipe(
+      tap(() => this.reload()),
+      finalize(() => this.patch({ loading: false })),
+      catchError((err) => {
+        this.patch({ error: this.readError(err) });
+        return EMPTY;
+      }),
+    );
+  }
+
+  updateArtist(id: number, name: string, image?: File | null) {
+    this.patch({ loading: true, error: null });
+
+    return this.api.updateArtist(id, name, image).pipe(
+      tap(() => this.reload()),
+      finalize(() => this.patch({ loading: false })),
+      catchError((err) => {
+        this.patch({ error: this.readError(err) });
+        return EMPTY;
+      }),
+    );
+  }
 
   setPage(page: number) {
     this.patch({ page });
@@ -107,7 +132,10 @@ export class ArtistsFacade {
 
     this.api.listArtists({ page: s.page, size: s.size, sort })
       .pipe(
-        tap(result => this.patch({ result })),
+        tap(result => {
+          console.log('Resposta da API /artistas:', result);
+          this.patch({ result });
+        }),
         catchError((err) => {
           this.patch({ error: this.readError(err) });
           return EMPTY;
