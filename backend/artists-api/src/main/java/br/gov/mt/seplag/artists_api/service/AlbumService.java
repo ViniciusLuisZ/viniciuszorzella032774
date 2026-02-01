@@ -32,6 +32,31 @@ public class AlbumService {
     }
 
 
+    @Transactional(readOnly = true)
+    public AlbumResponse buscarPorId(Integer albumId) {
+
+        Album album = albumRepository.findById(albumId)
+                .orElseThrow(() -> new EntityNotFoundException("Álbum não encontrado"));
+
+        String capaUrl = null;
+
+        if (album.getCapaEndereco() != null && !album.getCapaEndereco().isBlank()) {
+            try {
+                capaUrl = minioStorageService.generatePresignedUrl(album.getCapaEndereco());
+            } catch (Exception e) {
+                log.warn("Falha ao gerar URL da capa do álbum {}", albumId, e);
+            }
+        }
+
+        return new AlbumResponse(
+                album.getId(),
+                album.getTitulo(),
+                capaUrl,
+                album.getCriadoEm()
+        );
+    }
+
+
     @Transactional
     public void deletarAlbum(Integer albumId) {
 

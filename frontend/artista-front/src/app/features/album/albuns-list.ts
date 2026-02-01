@@ -40,8 +40,8 @@ import { AlbumFacade } from './album.facade';
       <div class="rounded-xl border overflow-hidden bg-white" *ngFor="let al of (vm.result?.content ?? [])">
         <div class="h-40 flex items-center justify-center bg-slate-100">
           <img
-            *ngIf="al.capaEndereco; else noCover"
-            [src]="al.capaEndereco"
+            *ngIf="al.capaUrl; else noCover"
+            [src]="al.capaUrl"
             [alt]="al.titulo"
             class="max-h-full max-w-full object-contain"
             loading="lazy"
@@ -52,9 +52,28 @@ import { AlbumFacade } from './album.facade';
         </div>
 
         <div class="p-4">
-          <div class="font-semibold truncate">{{ al.titulo }}</div>
-          <div class="text-xs text-slate-500">ID: {{ al.id }}</div>
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <div class="font-semibold truncate">{{ al.titulo }}</div>
+              <div class="text-xs text-slate-500">ID: {{ al.id }}</div>
+            </div>
+
+            <a
+              class="rounded-lg border px-2 py-1 text-xs hover:bg-slate-50"
+              [routerLink]="['/artists', artistId, 'album', al.id, 'edit']">
+              Editar
+            </a>
+
+
+            <button
+              class="rounded-lg border px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+              [disabled]="vm.loading"
+              (click)="onDelete(al.id, al.titulo)">
+              Deletar
+            </button>
+          </div>
         </div>
+
       </div>
     </div>
 
@@ -97,6 +116,14 @@ export class AlbunsList implements OnInit {
   router = inject(Router);
 
   artistId!: number;
+
+  onDelete(alId: number, titulo: string) {
+    const ok = confirm(`Deletar o álbum "${titulo}"?`);
+    if (!ok) return;
+
+    this.facade.deleteAlbum(alId).subscribe();
+  }
+
 
   ngOnInit() {
     this.artistId = Number(this.route.snapshot.paramMap.get('id'));

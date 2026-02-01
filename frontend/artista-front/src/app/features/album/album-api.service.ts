@@ -26,5 +26,19 @@ export class AlbumApiService {
     return this.http.post<Album>(`${API_BASE_URL}/albuns`, form);
   }
 
+  deleteAlbum(albumId: number) {
+    return this.http.delete<void>(`${API_BASE_URL}/albuns/${albumId}`);
+  }
+
+  updateAlbum(albumId: number, titulo: string, capa?: File | null) {
+    const form = new FormData();
+    form.append('titulo', titulo);
+    if (capa) form.append('capa', capa, capa.name);
+    return this.http.put<Album>(`${API_BASE_URL}/albuns/${albumId}`, form);
+  }
+
+  getAlbum(albumId: number) {
+    return this.http.get<Album>(`${API_BASE_URL}/albuns/${albumId}`);
+  }
 
 }

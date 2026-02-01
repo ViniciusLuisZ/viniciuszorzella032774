@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -32,6 +33,11 @@ public class AlbumController {
         return albumService.buscarAlbunsPorArtista(artistaId, pageable);
     }
 
+    @GetMapping("/{id}")
+    public AlbumResponse buscarPorId(@PathVariable Integer id) {
+        return albumService.buscarPorId(id);
+    }
+
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -53,12 +59,12 @@ public class AlbumController {
 
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public AlbumResponse criar(
-            @RequestPart("titulo") String titulo,
-            @RequestPart("artistaId") Integer artistaId,
+    public ResponseEntity<AlbumResponse> criar(
+            @RequestParam("titulo") String titulo,
+            @RequestParam("artistaId") Integer artistaId,
             @RequestPart("capa") MultipartFile capa
     ) {
-        return albumService.criarAlbum(titulo, artistaId, capa);
+        return ResponseEntity.ok(albumService.criarAlbum(titulo, artistaId, capa));
     }
 
 
