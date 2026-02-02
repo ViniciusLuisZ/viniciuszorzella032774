@@ -22,11 +22,15 @@ public class ArtistaController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<ArtistaResponse>> listar(Pageable pageable) {
+    public ResponseEntity<Page<ArtistaResponse>> listar(
+            @RequestParam(required = false) String nome,
+            Pageable pageable
+    ) {
         return ResponseEntity.ok(
-                artistaService.buscarArtistas(pageable)
+                artistaService.buscarArtistas(nome, pageable)
         );
     }
+
 
     @DeleteMapping("/{id}")
     public void deletar(@PathVariable Integer id) {

@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ArtistaRepository extends JpaRepository<Artista, Integer> {
     Page<Artista> findAll(Pageable pageable);
+
+    Page<Artista> findByNomeContainingIgnoreCase(String nome, Pageable pageable);
 }

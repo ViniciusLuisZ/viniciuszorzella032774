@@ -15,6 +15,9 @@ export class ArtistsApiService {
 
     if (req.sort) params = params.set('sort', req.sort);
 
+    const nome = req.nome?.trim();
+    if (nome) params = params.set('nome', nome);
+
     return this.http.get<Page<Artista>>(`${API_BASE_URL}/artistas`, { params });
   }
 

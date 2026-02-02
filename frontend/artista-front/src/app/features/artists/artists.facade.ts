@@ -1,6 +1,15 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, combineLatest, EMPTY } from 'rxjs';
-import { catchError, finalize, map, tap } from 'rxjs/operators';
+import { BehaviorSubject, EMPTY, Subject, combineLatest } from 'rxjs';
+import {
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  finalize,
+  map,
+  startWith,
+  switchMap,
+  tap,
+} from 'rxjs/operators';
 import { ArtistsApiService } from './artists-api.service';
 import { Page, SortDir } from '../../core/api/page.model';
 import { Artista, ArtistaCreate } from './artists.model';
@@ -9,13 +18,11 @@ type ArtistsUiState = {
   loading: boolean;
   error: string | null;
 
-  // query/ui
   search: string;
   sortDir: SortDir;
   page: number;
   size: number;
 
-  // data
   result: Page<Artista> | null;
 };
 
@@ -32,52 +39,97 @@ const initialState: ArtistsUiState = {
 @Injectable({ providedIn: 'root' })
 export class ArtistsFacade {
   private readonly state$ = new BehaviorSubject<ArtistsUiState>(initialState);
+  private readonly reload$ = new Subject<void>();
 
   readonly vm$ = this.state$.pipe(
     map((s) => {
       const page = s.result;
-
-      // Busca client-side (temporário) — depois vira query na API
-      let content = page?.content ?? [];
-      const q = s.search.trim().toLowerCase();
-      if (q) {
-        content = content.filter(a => a.nome?.toLowerCase().includes(q));
-      }
-
-      // Ordenação client-side (temporário) — depois manda sort no backend
-      content = [...content].sort((a, b) => {
-        const an = (a.nome ?? '').toLowerCase();
-        const bn = (b.nome ?? '').toLowerCase();
-        if (an === bn) return 0;
-        const res = an < bn ? -1 : 1;
-        return s.sortDir === 'asc' ? res : -res;
-      });
-
       return {
         ...s,
-        content,
+        content: page?.content ?? [],
         totalElements: page?.totalElements ?? 0,
         totalPages: page?.totalPages ?? 0,
       };
     }),
   );
 
-  constructor(private api: ArtistsApiService) {}
+  constructor(private api: ArtistsApiService) {
+    // dispara carregamento automático quando search/sort/page/size mudar
+    const search$ = this.state$.pipe(
+      map(s => s.search.trim()),
+      debounceTime(300),
+      distinctUntilChanged(),
+    );
+
+    const sortDir$ = this.state$.pipe(
+      map(s => s.sortDir),
+      distinctUntilChanged(),
+    );
+
+    const page$ = this.state$.pipe(
+      map(s => s.page),
+      distinctUntilChanged(),
+    );
+
+    const size$ = this.state$.pipe(
+      map(s => s.size),
+      distinctUntilChanged(),
+    );
+
+    combineLatest([
+      search$,
+      sortDir$,
+      page$,
+      size$,
+      this.reload$.pipe(startWith(undefined)), // permite "Recarregar" forçar
+    ])
+      .pipe(
+        switchMap(([search, sortDir, page, size]) => {
+          this.patch({ loading: true, error: null });
+
+          const sort = `nome,${sortDir}`;
+
+          return this.api.listArtists({ page, size, sort, nome: search }).pipe(
+            tap((result) => this.patch({ result })),
+            catchError((err) => {
+              this.patch({ error: this.readError(err), result: null });
+              return EMPTY;
+            }),
+            finalize(() => this.patch({ loading: false })),
+          );
+        }),
+      )
+      .subscribe();
+  }
 
   init() {
-    // evita reload infinito se chamar várias vezes
-    if (this.state$.value.result) return;
+    // primeira carga
     this.reload();
   }
 
   setSearch(search: string) {
+    // volta para primeira página e deixa o stream debounced fazer a chamada
     this.patch({ search, page: 0 });
-    // se quiser buscar de verdade na API depois, chama reload aqui
   }
 
   setSortDir(dir: SortDir) {
+    // volta para página 0 e chama automaticamente (sem debounce)
     this.patch({ sortDir: dir, page: 0 });
-    // depois: reload com sort server-side
+    // não precisa chamar reload: sortDir$ já dispara combineLatest
+  }
+
+  setPage(page: number) {
+    this.patch({ page: Math.max(0, page) });
+    // page$ dispara
+  }
+
+  setSize(size: number) {
+    this.patch({ size, page: 0 });
+    // size$ dispara
+  }
+
+  reload() {
+    this.reload$.next();
   }
 
   createArtist(payload: ArtistaCreate) {
@@ -110,39 +162,6 @@ export class ArtistsFacade {
         return EMPTY;
       }),
     );
-  }
-
-  setPage(page: number) {
-    this.patch({ page });
-    this.reload();
-  }
-
-  setSize(size: number) {
-    this.patch({ size, page: 0 });
-    this.reload();
-  }
-
-  reload() {
-    const s = this.state$.value;
-    this.patch({ loading: true, error: null });
-
-    // Hoje sua API suporta sort via Pageable (se estiver usando Spring Data).
-    // Vou mandar sort=nome,asc|desc (não quebra mesmo se ignorar).
-    const sort = `nome,${s.sortDir}`;
-
-    this.api.listArtists({ page: s.page, size: s.size, sort })
-      .pipe(
-        tap(result => {
-          console.log('Resposta da API /artistas:', result);
-          this.patch({ result });
-        }),
-        catchError((err) => {
-          this.patch({ error: this.readError(err) });
-          return EMPTY;
-        }),
-        finalize(() => this.patch({ loading: false })),
-      )
-      .subscribe();
   }
 
   private patch(partial: Partial<ArtistsUiState>) {

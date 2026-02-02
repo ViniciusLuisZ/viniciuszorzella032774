@@ -23,11 +23,13 @@ import {Router, RouterLink} from '@angular/router';
 
         <select
           class="rounded-lg border bg-white px-3 py-2 text-sm"
-          (change)="facade.setSortDir(($any($event.target).value))"
+          [ngModel]="'asc'"
+          (ngModelChange)="facade.setSortDir($event)"
         >
           <option value="asc">A → Z</option>
           <option value="desc">Z → A</option>
         </select>
+
 
         <button
           class="rounded-lg bg-black px-3 py-2 text-sm text-white"

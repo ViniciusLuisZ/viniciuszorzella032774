@@ -6,6 +6,8 @@ import br.gov.mt.seplag.artists_api.domain.entity.Album;
 import br.gov.mt.seplag.artists_api.domain.repository.ArtistaRepository;
 import br.gov.mt.seplag.artists_api.domain.repository.AlbumRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +24,8 @@ public class ArtistaService {
     private final AlbumRepository albumRepository;
     private final MinioStorageService minioStorageService;
 
+    private static final Logger log = LoggerFactory.getLogger(ArtistaService.class);
+
     @Autowired
     public ArtistaService(ArtistaRepository artistaRepository, AlbumRepository albumRepository, MinioStorageService minioStorageService) {
         this.artistaRepository = artistaRepository;
@@ -29,36 +33,33 @@ public class ArtistaService {
         this.minioStorageService = minioStorageService;
     }
 
-    public Page<ArtistaResponse> buscarArtistas(Pageable pageable) {
+    public Page<ArtistaResponse> buscarArtistas(String nome, Pageable pageable) {
 
-        return artistaRepository.findAll(pageable)
-                .map(artista -> {
+        Page<Artista> page = (nome != null && !nome.isBlank())
+                ? artistaRepository.findByNomeContainingIgnoreCase(nome.trim(), pageable)
+                : artistaRepository.findAll(pageable);
 
-                    String fotoUrl = null;
+        return page.map(artista -> {
+            String fotoUrl = null;
 
-                    if (artista.getFotoEndereco() != null) {
-                        try {
-                            fotoUrl = minioStorageService.generatePresignedUrl(
-                                    artista.getFotoEndereco()
-                            );
-                        } catch (Exception e) {
-                            fotoUrl = null;
-                        }
-                    }
+            if (artista.getFotoEndereco() != null) {
+                try {
+                    fotoUrl = minioStorageService.generatePresignedUrl(artista.getFotoEndereco());
+                } catch (Exception e) {
+                    fotoUrl = null;
+                }
+            }
 
-                    return new ArtistaResponse(
-                            artista.getId(),
-                            artista.getNome(),
-                            fotoUrl,
-                            artista.getCriadoEm()
-                    );
-                });
+            return new ArtistaResponse(
+                    artista.getId(),
+                    artista.getNome(),
+                    fotoUrl,
+                    artista.getCriadoEm()
+            );
+        });
     }
 
 
-    public Page<Artista> getAllArtistas(Pageable pageable) {
-        return artistaRepository.findAll(pageable);
-    }
 
     @Transactional
     public void deletarArtista(Integer artistaId) {
@@ -66,15 +67,14 @@ public class ArtistaService {
         Artista artista = artistaRepository.findById(artistaId)
                 .orElseThrow(() -> new EntityNotFoundException("Artista não encontrado"));
 
-        var albuns = albumRepository.findAllByArtistaId(artistaId); // veja nota abaixo
+        var albuns = albumRepository.findAllByArtistaId(artistaId);
         for (Album album : albuns) {
             String capa = album.getCapaEndereco();
             if (capa != null && !capa.isBlank()) {
                 try {
                     minioStorageService.delete(capa);
                 } catch (Exception e) {
-                    // não derruba a exclusão por causa do storage
-                    // ideal: log.warn(...)
+                    log.warn("Falha ao excluir capa do álbum {}:", album.getId(), e);
                 }
             }
         }
@@ -84,7 +84,7 @@ public class ArtistaService {
             try {
                 minioStorageService.delete(foto);
             } catch (Exception e) {
-                // ideal: log.warn(...)
+                log.warn("Falha ao excluir capa do artista {}:", artista.getId(), e);
             }
         }
 

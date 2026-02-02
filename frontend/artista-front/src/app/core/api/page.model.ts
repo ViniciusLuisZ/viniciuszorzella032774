@@ -13,5 +13,6 @@ export type SortDir = 'asc' | 'desc';
 export type PageRequest = {
   page: number;
   size: number;
-  sort?: string;     // ex: "nome,asc"
+  sort?: string;
+  nome?: string;
 };
