@@ -11,7 +11,6 @@ import {Router, RouterLink} from '@angular/router';
     <div class="flex items-center justify-between gap-4">
       <div>
         <h1 class="text-xl font-semibold">Artistas</h1>
-        <p class="text-sm text-slate-500">Listagem com Facade + BehaviorSubject</p>
       </div>
 
       <div class="flex items-center gap-2">

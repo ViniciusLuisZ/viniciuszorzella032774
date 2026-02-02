@@ -54,7 +54,10 @@ public class AuthController {
                 300_000
         );
 
-        return Map.of("accessToken", newAccessToken);
+        return Map.of(
+                "accessToken", newAccessToken,
+                "refreshToken", token
+        );
     }
 
 

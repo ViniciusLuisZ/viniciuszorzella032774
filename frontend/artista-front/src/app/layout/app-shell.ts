@@ -52,10 +52,25 @@ import { AuthService } from '../core/auth/auth.service';
 
       <!-- HEADER -->
       <header class="h-16 bg-white border-b px-6 flex items-center justify-between">
-        <span class="text-sm text-slate-600">
-          Sistema de Artistas
-        </span>
+
+        <div class="flex items-center gap-6 text-sm">
+          <div class="text-slate-700">
+            <span class="text-slate-500">Usuário: </span>
+            <span class="font-medium">{{ (username$ | async) ?? '-' }}</span>
+          </div>
+
+          <div class="text-slate-700">
+            <span class="text-slate-500">Access Token: </span>
+            <span class="font-medium tabular-nums">{{ accessRemaining$ | async }}</span>
+          </div>
+
+          <div class="text-slate-700">
+            <span class="text-slate-500">Refresh Token: </span>
+            <span class="font-medium tabular-nums">{{ refreshRemaining$ | async }}</span>
+          </div>
+        </div>
       </header>
+
 
       <!-- MAIN -->
       <main class="flex-1 overflow-auto p-6">
@@ -69,6 +84,9 @@ import { AuthService } from '../core/auth/auth.service';
 export class AppShell {
   private auth = inject(AuthService);
   private router = inject(Router);
+  username$ = this.auth.username$;
+  accessRemaining$ = this.auth.accessRemaining$;
+  refreshRemaining$ = this.auth.refreshRemaining$;
 
   logout() {
     this.auth.logout();

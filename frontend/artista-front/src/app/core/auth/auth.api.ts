@@ -12,13 +12,13 @@ export type LoginResponse = {
 export class AuthApi {
   constructor(private http: HttpClient) {}
 
-  login(nome: string, senha: string) {
-    // POST com JSON no body (correto)
-    return this.http.post<LoginResponse>(
+  login(nome: string) {
+    return this.http.post<{ accessToken: string; refreshToken: string }>(
       `${API_BASE_URL}/auth/login`,
-      { nome, senha }
+      { nome }
     );
   }
+
 
   refresh(refreshToken: string) {
     return this.http.post<LoginResponse>(
