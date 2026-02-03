@@ -20,12 +20,29 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
 
+    private static final int LIMIT = 10;
+    private static final Duration WINDOW = Duration.ofMinutes(1);
+
     private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
     private Bucket createNewBucket() {
         return Bucket.builder()
-                .addLimit(Bandwidth.classic(10, Refill.intervally(10, Duration.ofMinutes(1))))
+                .addLimit(Bandwidth.classic(LIMIT, Refill.intervally(LIMIT, WINDOW)))
                 .build();
+    }
+
+    private String resolveKey(HttpServletRequest request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        // Se autenticado, limita por usuário
+        if (auth != null && auth.isAuthenticated() && auth.getPrincipal() != null) {
+            String username = String.valueOf(auth.getPrincipal());
+            if (!username.isBlank() && !"anonymousUser".equals(username)) {
+                return "user:" + username;
+            }
+        }
+
+        return "ip:" + request.getRemoteAddr();
     }
 
     @Override
@@ -35,21 +52,26 @@ public class RateLimitFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        String ip = request.getRemoteAddr();
+        String key = resolveKey(request);
 
-        Bucket bucket = buckets.computeIfAbsent(ip, key -> createNewBucket());
+        Bucket bucket = buckets.computeIfAbsent(key, k -> createNewBucket());
 
         if (bucket.tryConsume(1)) {
             filterChain.doFilter(request, response);
-        } else {
-            response.setStatus(429);
-            response.getWriter().write("Rate limit excedido. Tente novamente em instantes.");
+            return;
         }
+
+        response.setStatus(429);
+        response.setContentType("text/plain; charset=UTF-8");
+        response.getWriter().write("Rate limit excedido (10 req/min). Tente novamente em instantes.");
     }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        return path.startsWith("/swagger") || path.startsWith("/v3/api-docs");
+        return path.startsWith("/swagger")
+                || path.startsWith("/v3/api-docs")
+                || path.startsWith("/actuator")
+                || path.startsWith("/api/v1/auth"); // opcional: não rate-limitar login/refresh
     }
 }
