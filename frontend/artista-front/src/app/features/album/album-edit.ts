@@ -15,7 +15,7 @@ import { AlbumFacade } from './album.facade';
       </div>
 
       <button
-        class="rounded-lg border bg-white px-3 py-2 text-sm"
+        class="cursor-pointer rounded-lg border bg-white px-3 py-2 text-sm"
         (click)="router.navigateByUrl('/artists/' + artistId)"
       >
         Voltar

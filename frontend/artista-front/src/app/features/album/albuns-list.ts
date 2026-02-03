@@ -2,10 +2,12 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import { AlbumFacade } from './album.facade';
+import {ActionButtons} from '../../shared/buttons/action-buttons';
+import {VoltarBotao} from '../../shared/buttons/voltar-botao';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, ActionButtons, VoltarBotao],
   template: `
   <div class="flex items-center justify-between">
     <div>
@@ -15,10 +17,7 @@ import { AlbumFacade } from './album.facade';
 
     <div class="flex gap-2">
 
-      <button class="rounded-lg border bg-white px-3 py-2 text-sm"
-              (click)="router.navigateByUrl('/artists')">
-        Voltar
-      </button>
+      <voltar-botao [to]="['/artists']"></voltar-botao>
 
       <a class="rounded-lg bg-black px-3 py-2 text-sm text-white"
          [routerLink]="['/artists', artistId, 'album', 'new']">
@@ -58,19 +57,12 @@ import { AlbumFacade } from './album.facade';
               <div class="text-xs text-slate-500">ID: {{ al.id }}</div>
             </div>
 
-            <a
-              class="rounded-lg border px-2 py-1 text-xs hover:bg-slate-50"
-              [routerLink]="['/artists', artistId, 'album', al.id, 'edit']">
-              Editar
-            </a>
-
-
-            <button
-              class="rounded-lg border px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+            <app-action-buttons
+              [editLink]="['/artists', artistId, 'album', al.id, 'edit']"
               [disabled]="vm.loading"
-              (click)="onDelete(al.id, al.titulo)">
-              Deletar
-            </button>
+              (delete)="onDelete(al.id, al.titulo)"
+            ></app-action-buttons>
+
           </div>
         </div>
 
@@ -84,19 +76,19 @@ import { AlbumFacade } from './album.facade';
       </div>
 
       <div class="flex items-center gap-2">
-        <button class="rounded-lg border px-3 py-1"
+        <button class="cursor-pointer rounded-lg border px-3 py-1"
                 [disabled]="(vm.page ?? 0) === 0 || vm.loading"
                 (click)="facade.setPage((vm.page ?? 0) - 1)">
           Anterior
         </button>
 
-        <button class="rounded-lg border px-3 py-1"
+        <button class="cursor-pointer rounded-lg border px-3 py-1"
                 [disabled]="(vm.result?.last ?? true) || vm.loading"
                 (click)="facade.setPage((vm.page ?? 0) + 1)">
           Próxima
         </button>
 
-        <select class="rounded-lg border bg-white px-2 py-1"
+        <select class="cursor-pointer rounded-lg border bg-white px-2 py-1"
                 [disabled]="vm.loading"
                 (change)="facade.setSize(+$any($event.target).value)">
           <option [selected]="(vm.size ?? 10)===10" value="10">10</option>

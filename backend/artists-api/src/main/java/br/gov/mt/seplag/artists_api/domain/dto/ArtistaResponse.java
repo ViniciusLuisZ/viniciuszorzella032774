@@ -9,11 +9,18 @@ public class ArtistaResponse {
     private String fotoEndereco;
     private LocalDateTime criadoEm;
 
-    public ArtistaResponse(Integer id, String nome, String fotoEndereco, LocalDateTime criadoEm) {
+    private Long totalAlbuns;
+
+    public ArtistaResponse(Integer id, String nome, String fotoEndereco, LocalDateTime criadoEm, Long totalAlbuns) {
         this.id = id;
         this.nome = nome;
         this.fotoEndereco = fotoEndereco;
         this.criadoEm = criadoEm;
+        this.totalAlbuns = totalAlbuns;
+    }
+
+    public ArtistaResponse(Integer id, String nome, String fotoEndereco, LocalDateTime criadoEm) {
+        this(id, nome, fotoEndereco, criadoEm, 0L);
     }
 
     public Integer getId() {
@@ -31,4 +38,6 @@ public class ArtistaResponse {
     public LocalDateTime getCriadoEm() {
         return criadoEm;
     }
+    public Long getTotalAlbuns() { return totalAlbuns; }
+
 }

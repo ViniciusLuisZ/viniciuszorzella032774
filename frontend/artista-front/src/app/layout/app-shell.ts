@@ -20,7 +20,7 @@ import { AuthService } from '../core/auth/auth.service';
       <!-- Logo / Título -->
       <div class="h-16 flex items-center px-6 border-b border-slate-800">
         <span class="text-lg font-semibold tracking-wide">
-          Artists
+          Artistas&Albuns
         </span>
       </div>
 

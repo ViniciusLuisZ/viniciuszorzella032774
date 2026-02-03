@@ -3,10 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ArtistsFacade } from './artists.facade';
+import {VoltarBotao} from '../../shared/buttons/voltar-botao';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, VoltarBotao],
   template: `
   <div class="flex items-center justify-between">
     <div>
@@ -14,12 +15,8 @@ import { ArtistsFacade } from './artists.facade';
       <p class="text-sm text-slate-500">Cria artista com nome + foto (multipart)</p>
     </div>
 
-    <button
-      class="rounded-lg border bg-white px-3 py-2 text-sm"
-      (click)="router.navigateByUrl('/artists')"
-    >
-      Voltar
-    </button>
+    <voltar-botao [to]="['/artists']"></voltar-botao>
+
   </div>
 
   <div class="mt-4 rounded-xl border bg-white p-4 max-w-xl">

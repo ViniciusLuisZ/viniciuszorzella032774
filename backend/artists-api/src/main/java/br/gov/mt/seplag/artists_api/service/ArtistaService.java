@@ -1,5 +1,6 @@
 package br.gov.mt.seplag.artists_api.service;
 
+import br.gov.mt.seplag.artists_api.domain.dto.ArtistaListRow;
 import br.gov.mt.seplag.artists_api.domain.dto.ArtistaResponse;
 import br.gov.mt.seplag.artists_api.domain.entity.Artista;
 import br.gov.mt.seplag.artists_api.domain.entity.Album;
@@ -35,29 +36,31 @@ public class ArtistaService {
 
     public Page<ArtistaResponse> buscarArtistas(String nome, Pageable pageable) {
 
-        Page<Artista> page = (nome != null && !nome.isBlank())
-                ? artistaRepository.findByNomeContainingIgnoreCase(nome.trim(), pageable)
-                : artistaRepository.findAll(pageable);
+        Page<ArtistaListRow> page = (nome != null && !nome.isBlank())
+                ? artistaRepository.listarComTotalAlbunsFiltrandoNome(nome.trim(), pageable)
+                : artistaRepository.listarComTotalAlbuns(pageable);
 
-        return page.map(artista -> {
+        return page.map(row -> {
+
             String fotoUrl = null;
-
-            if (artista.getFotoEndereco() != null) {
+            if (row.getFotoEndereco() != null) {
                 try {
-                    fotoUrl = minioStorageService.generatePresignedUrl(artista.getFotoEndereco());
+                    fotoUrl = minioStorageService.generatePresignedUrl(row.getFotoEndereco());
                 } catch (Exception e) {
                     fotoUrl = null;
                 }
             }
 
             return new ArtistaResponse(
-                    artista.getId(),
-                    artista.getNome(),
+                    row.getId(),
+                    row.getNome(),
                     fotoUrl,
-                    artista.getCriadoEm()
+                    row.getCriadoEm(),
+                    row.getTotalAlbuns()
             );
         });
     }
+
 
 
 

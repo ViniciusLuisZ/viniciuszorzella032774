@@ -3,53 +3,56 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ArtistsFacade } from './artists.facade';
 import {Router, RouterLink} from '@angular/router';
+import {ActionButtons} from '../../shared/buttons/action-buttons';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, ActionButtons],
   template: `
-    <div class="flex items-center justify-between gap-4">
-      <div>
-        <h1 class="text-xl font-semibold">Artistas</h1>
-      </div>
-
-      <div class="flex items-center gap-2">
-        <input
-          class="w-64 rounded-lg border bg-white px-3 py-2 text-sm"
-          placeholder="Buscar por nome..."
-          [(ngModel)]="search"
-          (ngModelChange)="facade.setSearch($event)"
-        />
-
-        <select
-          class="rounded-lg border bg-white px-3 py-2 text-sm"
-          [ngModel]="'asc'"
-          (ngModelChange)="facade.setSortDir($event)"
-        >
-          <option value="asc">A → Z</option>
-          <option value="desc">Z → A</option>
-        </select>
-
-
-        <button
-          class="rounded-lg bg-black px-3 py-2 text-sm text-white"
-          (click)="facade.reload()"
-        >
-          Recarregar
-        </button>
-
-        <button
-          class="rounded-lg bg-black px-3 py-2 text-sm text-white"
-          routerLink="/artists/new"
-        >
-          + Novo artista
-        </button>
-
-
-      </div>
-    </div>
 
     <div class="mt-4 rounded-xl border bg-white p-4" *ngIf="(vm$ | async) as vm">
+      <div class="flex items-center justify-between gap-4">
+        <div>
+          <h1 class="text-xl font-semibold">Artistas</h1>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <input
+            class="w-64 rounded-lg border bg-white px-3 py-2 text-sm"
+            placeholder="Buscar por nome..."
+            [(ngModel)]="vm.search"
+            (ngModelChange)="facade.setSearch($event)"
+          />
+
+          <select
+            class="rounded-lg border cursor-pointer bg-white px-3 py-2 text-sm"
+            [ngModel]="vm.sortDir"
+            (ngModelChange)="facade.setSortDir($event)"
+          >
+            <option value="asc">A → Z</option>
+            <option value="desc">Z → A</option>
+          </select>
+
+
+          <button
+            class="rounded-lg bg-black px-3 py-2 cursor-pointer text-sm text-white"
+            (click)="facade.reload()"
+          >
+            Recarregar
+          </button>
+
+          <button
+            class="rounded-lg bg-black px-3 py-2 cursor-pointer text-sm text-white"
+            routerLink="/artists/new"
+          >
+            + Novo artista
+          </button>
+
+
+        </div>
+      </div>
+
+
       <div *ngIf="vm.loading" class="text-sm text-slate-500">Carregando…</div>
       <div *ngIf="vm.error" class="text-sm text-red-600">{{ vm.error }}</div>
 
@@ -57,7 +60,6 @@ import {Router, RouterLink} from '@angular/router';
         <div
           class="rounded-xl border overflow-hidden bg-white"
           *ngFor="let a of vm.content"
-          (click)="goToArtist(a.id)"
         >
           <!-- Imagem -->
           <div class="h-50 bg-slate-100 flex items-center justify-center">
@@ -82,27 +84,27 @@ import {Router, RouterLink} from '@angular/router';
               <div class="min-w-0">
                 <div class="font-semibold truncate">{{ a.nome }}</div>
                 <div class="text-xs text-slate-500">ID: {{ a.id }}</div>
+                <div class="text-xs text-slate-500">
+                  Álbuns: {{ a.totalAlbuns ?? 0 }}
+                </div>
               </div>
 
               <div class="flex gap-2">
                 <a
                   class="shrink-0 rounded-lg border px-3 py-1 text-sm hover:bg-slate-50"
-                  [routerLink]="['/artists', a.id, 'edit']"
-                  (click)="$event.stopPropagation(); onDelete(a.id, a.nome)"
-                  title="Editar artista"
+                  [routerLink]="['/artists', a.id]"
+                  title="Ver álbuns"
                 >
-                  Editar
+                  Ver álbuns
                 </a>
 
-                <button
-                  class="shrink-0 rounded-lg border px-3 py-1 text-sm hover:bg-slate-50"
-                  (click)="$event.stopPropagation(); onDelete(a.id, a.nome)"
+                <app-action-buttons
+                  [editLink]="['/artists', a.id, 'edit']"
                   [disabled]="vm.loading"
-                  title="Excluir artista"
-                >
-                  Excluir
-                </button>
+                  (delete)="onDelete(a.id, a.nome)"
+                ></app-action-buttons>
               </div>
+
             </div>
           </div>
         </div>
@@ -144,16 +146,10 @@ export class ArtistsList implements OnInit {
   facade = inject(ArtistsFacade);
   vm$ = this.facade.vm$;
 
-  search = '';
-
   private router = inject(Router);
 
   ngOnInit() {
     this.facade.init();
-  }
-
-  goToArtist(id: number) {
-    this.router.navigate(['/artists', id]);
   }
 
   onDelete(id: number, nome: string) {

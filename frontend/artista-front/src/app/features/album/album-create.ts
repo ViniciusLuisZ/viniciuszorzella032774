@@ -3,10 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AlbumFacade } from './album.facade';
+import {VoltarBotao} from '../../shared/buttons/voltar-botao';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, VoltarBotao],
   template: `
   <div class="flex items-center justify-between">
     <div>
@@ -14,10 +15,8 @@ import { AlbumFacade } from './album.facade';
       <p class="text-sm text-slate-500">Artista ID: {{ artistId }}</p>
     </div>
 
-    <button class="rounded-lg border bg-white px-3 py-2 text-sm"
-            (click)="router.navigate(['/artists', artistId])">
-      Voltar
-    </button>
+    <voltar-botao [to]="['/artists', artistId]"></voltar-botao>
+
   </div>
 
   <div class="mt-4 rounded-xl border bg-white p-4 max-w-xl">
