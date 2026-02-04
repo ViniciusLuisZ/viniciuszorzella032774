@@ -1,103 +1,109 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {ActivatedRoute, Router, RouterLink} from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AlbumFacade } from './album.facade';
-import {ActionButtons} from '../../shared/buttons/action-buttons';
-import {VoltarBotao} from '../../shared/buttons/voltar-botao';
+import { ActionButtons } from '../../shared/buttons/action-buttons';
+import { VoltarBotao } from '../../shared/buttons/voltar-botao';
 
 @Component({
   standalone: true,
   imports: [CommonModule, RouterLink, ActionButtons, VoltarBotao],
   template: `
-  <div class="flex items-center justify-between">
-    <div>
-      <h1 class="text-xl font-semibold">Álbuns do artista</h1>
-      <p class="text-sm text-slate-500">Artista ID: {{ artistId }}</p>
+    <!-- Top bar -->
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h1 class="text-xl font-semibold">Álbuns do artista</h1>
+        <p class="text-sm text-slate-500">Artista ID: {{ artistId }}</p>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:justify-end">
+        <voltar-botao [to]="['/artists']"></voltar-botao>
+
+        <a
+          class="w-full sm:w-auto text-center rounded-lg bg-black px-3 py-2 text-sm text-white"
+          [routerLink]="['/artists', artistId, 'album', 'new']"
+        >
+          + Novo álbum
+        </a>
+      </div>
     </div>
 
-    <div class="flex gap-2">
+    <div class="mt-4 rounded-xl border bg-white p-4" *ngIf="(vm$ | async) as vm">
+      <div *ngIf="vm.loading" class="text-sm text-slate-500">Carregando…</div>
+      <div *ngIf="vm.error" class="text-sm text-red-600">{{ vm.error }}</div>
 
-      <voltar-botao [to]="['/artists']"></voltar-botao>
+      <div *ngIf="!vm.loading && (vm.result?.content?.length ?? 0) === 0" class="text-sm text-slate-600">
+        Este artista ainda não possui álbuns cadastrados.
+      </div>
 
-      <a class="rounded-lg bg-black px-3 py-2 text-sm text-white"
-         [routerLink]="['/artists', artistId, 'album', 'new']">
-        + Novo álbum
-      </a>
-    </div>
+      <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3" *ngIf="!vm.loading">
+        <div class="rounded-xl border overflow-hidden bg-white" *ngFor="let al of (vm.result?.content ?? [])">
+          <div class="h-40 flex items-center justify-center bg-slate-100">
+            <img
+              *ngIf="al.capaUrl; else noCover"
+              [src]="al.capaUrl"
+              [alt]="al.titulo"
+              class="h-full w-full object-contain"
+              loading="lazy"
+            />
+            <ng-template #noCover>
+              <div class="text-slate-400 text-sm">Sem capa</div>
+            </ng-template>
+          </div>
 
-  </div>
+          <div class="p-4">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <div class="font-semibold truncate">{{ al.titulo }}</div>
+                <div class="text-xs text-slate-500">ID: {{ al.id }}</div>
+              </div>
 
-  <div class="mt-4 rounded-xl border bg-white p-4" *ngIf="(vm$ | async) as vm">
-    <div *ngIf="vm.loading" class="text-sm text-slate-500">Carregando…</div>
-    <div *ngIf="vm.error" class="text-sm text-red-600">{{ vm.error }}</div>
-
-    <div *ngIf="!vm.loading && (vm.result?.content?.length ?? 0) === 0" class="text-sm text-slate-600">
-      Este artista ainda não possui álbuns cadastrados.
-    </div>
-
-    <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3" *ngIf="!vm.loading">
-      <div class="rounded-xl border overflow-hidden bg-white" *ngFor="let al of (vm.result?.content ?? [])">
-        <div class="h-40 flex items-center justify-center bg-slate-100">
-          <img
-            *ngIf="al.capaUrl; else noCover"
-            [src]="al.capaUrl"
-            [alt]="al.titulo"
-            class="max-h-full max-w-full object-contain"
-            loading="lazy"
-          />
-          <ng-template #noCover>
-            <div class="text-slate-400 text-sm">Sem capa</div>
-          </ng-template>
-        </div>
-
-        <div class="p-4">
-          <div class="flex items-start justify-between gap-2">
-            <div class="min-w-0">
-              <div class="font-semibold truncate">{{ al.titulo }}</div>
-              <div class="text-xs text-slate-500">ID: {{ al.id }}</div>
+              <app-action-buttons
+                [editLink]="['/artists', artistId, 'album', al.id, 'edit']"
+                [disabled]="vm.loading"
+                (delete)="onDelete(al.id, al.titulo)"
+              ></app-action-buttons>
             </div>
-
-            <app-action-buttons
-              [editLink]="['/artists', artistId, 'album', al.id, 'edit']"
-              [disabled]="vm.loading"
-              (delete)="onDelete(al.id, al.titulo)"
-            ></app-action-buttons>
-
           </div>
         </div>
+      </div>
 
+      <!-- Paginação -->
+      <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-sm text-slate-600">
+        <div>
+          Página {{ (vm.result?.number ?? 0) + 1 }} / {{ (vm.result?.totalPages ?? 0) }}
+          • Total: {{ (vm.result?.totalElements ?? 0) }}
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 sm:justify-end">
+          <button
+            class="cursor-pointer rounded-lg border px-3 py-1"
+            [disabled]="(vm.page ?? 0) === 0 || vm.loading"
+            (click)="facade.setPage((vm.page ?? 0) - 1)"
+          >
+            Anterior
+          </button>
+
+          <button
+            class="cursor-pointer rounded-lg border px-3 py-1"
+            [disabled]="(vm.result?.last ?? true) || vm.loading"
+            (click)="facade.setPage((vm.page ?? 0) + 1)"
+          >
+            Próxima
+          </button>
+
+          <select
+            class="cursor-pointer rounded-lg border bg-white px-2 py-1"
+            [disabled]="vm.loading"
+            (change)="facade.setSize(+$any($event.target).value)"
+          >
+            <option [selected]="(vm.size ?? 10)===10" value="10">10</option>
+            <option [selected]="(vm.size ?? 10)===20" value="20">20</option>
+            <option [selected]="(vm.size ?? 10)===50" value="50">50</option>
+          </select>
+        </div>
       </div>
     </div>
-
-    <div class="mt-4 flex items-center justify-between text-sm text-slate-600">
-      <div>
-        Página {{ (vm.result?.number ?? 0) + 1 }} / {{ (vm.result?.totalPages ?? 0) }}
-        • Total: {{ (vm.result?.totalElements ?? 0) }}
-      </div>
-
-      <div class="flex items-center gap-2">
-        <button class="cursor-pointer rounded-lg border px-3 py-1"
-                [disabled]="(vm.page ?? 0) === 0 || vm.loading"
-                (click)="facade.setPage((vm.page ?? 0) - 1)">
-          Anterior
-        </button>
-
-        <button class="cursor-pointer rounded-lg border px-3 py-1"
-                [disabled]="(vm.result?.last ?? true) || vm.loading"
-                (click)="facade.setPage((vm.page ?? 0) + 1)">
-          Próxima
-        </button>
-
-        <select class="cursor-pointer rounded-lg border bg-white px-2 py-1"
-                [disabled]="vm.loading"
-                (change)="facade.setSize(+$any($event.target).value)">
-          <option [selected]="(vm.size ?? 10)===10" value="10">10</option>
-          <option [selected]="(vm.size ?? 10)===20" value="20">20</option>
-          <option [selected]="(vm.size ?? 10)===50" value="50">50</option>
-        </select>
-      </div>
-    </div>
-  </div>
   `,
 })
 export class AlbunsList implements OnInit {
@@ -115,7 +121,6 @@ export class AlbunsList implements OnInit {
 
     this.facade.deleteAlbum(alId).subscribe();
   }
-
 
   ngOnInit() {
     this.artistId = Number(this.route.snapshot.paramMap.get('id'));
