@@ -12,48 +12,54 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class MinioStorageService {
 
-    private final MinioClient minioClient;
+    private final MinioClient minioClientInternal;
+    private final MinioClient minioClientPublic;
     private final String bucket;
-    private final String minioInternalUrl;
-    private final String minioPublicUrl;
+    private final String internalUrl;
+    private final String publicUrl;
 
     public MinioStorageService(
-            MinioClient minioClient,
             @Value("${minio.bucket}") String bucket,
             @Value("${minio.url}") String minioInternalUrl,
-            @Value("${minio.public-url}") String minioPublicUrl
+            @Value("${minio.public-url}") String minioPublicUrl,
+            @Value("${minio.access-key}") String accessKey,
+            @Value("${minio.secret-key}") String secretKey
     ) {
-        this.minioClient = minioClient;
         this.bucket = bucket;
-        this.minioInternalUrl = trimTrailingSlash(minioInternalUrl);
-        this.minioPublicUrl = trimTrailingSlash(minioPublicUrl);
+        this.internalUrl = trim(minioInternalUrl);
+        this.publicUrl = trim(minioPublicUrl);
+
+        this.minioClientInternal = MinioClient.builder()
+                .endpoint(this.internalUrl)
+                .credentials(accessKey, secretKey)
+                .region("us-east-1")
+                .build();
+
+        this.minioClientPublic = MinioClient.builder()
+                .endpoint(this.publicUrl)
+                .credentials(accessKey, secretKey)
+                .region("us-east-1")
+                .build();
+
+        System.out.println("[MINIO] internal=" + this.internalUrl + " public=" + this.publicUrl + " bucket=" + bucket);
     }
 
-
-    private String trimTrailingSlash(String s) {
+    private String trim(String s) {
         if (s == null) return null;
         return s.endsWith("/") ? s.substring(0, s.length() - 1) : s;
     }
 
-
     @PostConstruct
     void initBucket() throws Exception {
-        boolean exists = minioClient.bucketExists(
-                BucketExistsArgs.builder().bucket(bucket).build()
-        );
-        if (!exists) {
-            minioClient.makeBucket(
-                    MakeBucketArgs.builder().bucket(bucket).build()
-            );
-        }
+        boolean exists = minioClientInternal.bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
+        if (!exists) minioClientInternal.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
     }
 
     public String upload(MultipartFile file, String folder) throws Exception {
-
         String extension = getExtension(file.getOriginalFilename());
         String objectName = folder + "/" + java.util.UUID.randomUUID() + extension;
 
-        minioClient.putObject(
+        minioClientInternal.putObject(
                 PutObjectArgs.builder()
                         .bucket(bucket)
                         .object(objectName)
@@ -66,14 +72,12 @@ public class MinioStorageService {
     }
 
     private String getExtension(String filename) {
-        if (filename == null || !filename.contains(".")) {
-            return "";
-        }
+        if (filename == null || !filename.contains(".")) return "";
         return filename.substring(filename.lastIndexOf("."));
     }
 
     public String generatePresignedUrl(String objectName) throws Exception {
-        return minioClient.getPresignedObjectUrl(
+        String url = minioClientPublic.getPresignedObjectUrl(
                 GetPresignedObjectUrlArgs.builder()
                         .bucket(bucket)
                         .object(objectName)
@@ -81,20 +85,19 @@ public class MinioStorageService {
                         .expiry(30, TimeUnit.MINUTES)
                         .build()
         );
+
+        System.out.println("[MINIO] presigned=" + url);
+        return url;
     }
 
     public void delete(String objectPath) {
         try {
-            minioClient.removeObject(
-                    RemoveObjectArgs.builder()
-                            .bucket(bucket)
-                            .object(objectPath)
-                            .build()
+            minioClientInternal.removeObject(
+                    RemoveObjectArgs.builder().bucket(bucket).object(objectPath).build()
             );
         } catch (Exception e) {
             throw new RuntimeException("Erro ao remover arquivo do MinIO", e);
         }
     }
-
-
 }
+
