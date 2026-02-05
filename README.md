@@ -120,11 +120,6 @@ A decisão foi priorizar:
 - upload e recuperação correta de imagens  
 - arquitetura limpa e funcional  
 
-Implementação planejada:
-
-- Backend: WebSocket com STOMP (`/topic/albums`)  
-- Frontend: Listener para exibição de notificações em tempo real  
-
 ---
 
 ## 🧠 Decisões Técnicas Relevantes
