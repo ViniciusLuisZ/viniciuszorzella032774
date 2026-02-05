@@ -14,13 +14,27 @@ public class MinioStorageService {
 
     private final MinioClient minioClient;
     private final String bucket;
+    private final String minioInternalUrl;
+    private final String minioPublicUrl;
 
     public MinioStorageService(
             MinioClient minioClient,
-            @Value("${minio.bucket}") String bucket) {
+            @Value("${minio.bucket}") String bucket,
+            @Value("${minio.url}") String minioInternalUrl,
+            @Value("${minio.public-url}") String minioPublicUrl
+    ) {
         this.minioClient = minioClient;
         this.bucket = bucket;
+        this.minioInternalUrl = trimTrailingSlash(minioInternalUrl);
+        this.minioPublicUrl = trimTrailingSlash(minioPublicUrl);
     }
+
+
+    private String trimTrailingSlash(String s) {
+        if (s == null) return null;
+        return s.endsWith("/") ? s.substring(0, s.length() - 1) : s;
+    }
+
 
     @PostConstruct
     void initBucket() throws Exception {
