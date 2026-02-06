@@ -55,6 +55,17 @@ Na raiz do projeto:
 docker compose up --build
 ```
 
+### ⏱️ Tempo de build inicial
+
+Observação: o primeiro build da aplicação pode levar vários minutos (5–10 min, dependendo da máquina e da conexão).
+
+Isso ocorre porque:
+
+- As imagens Docker base são baixadas do zero;
+- Dependências do frontend (Node/NPM) são instaladas;
+- O frontend Angular é compilado;
+- O backend Java é buildado sem uso de cache.
+
 ### URLs
 
 - **Frontend:** http://localhost:4200  
